@@ -1,5 +1,5 @@
 import { ChartsTooltip, PiePlot, pieArcLabelClasses } from '@mui/x-charts'
-import type { SeriesModel } from 'evidently-ui-lib/api/types/v2'
+import type { SeriesModel } from 'evidently-ui-lib/api/types'
 import type { MakePanel } from '~/components/v2/Dashboard/Panels/types'
 import { PanelCardGeneral } from './helpers/general'
 import { MuiXChartPlotTemplate, type SeriesType } from './helpers/mui'
@@ -14,6 +14,7 @@ export type PiePanelProps = MakePanel<{
   size: 'full' | 'half'
   aggregation: 'last' | 'sum' | 'avg'
   height?: number
+  borderNone?: boolean
 }>
 
 export const PieDashboardPanel = ({
@@ -22,7 +23,8 @@ export const PieDashboardPanel = ({
   description,
   height = 350,
   labels,
-  aggregation
+  aggregation,
+  borderNone = false
 }: PiePanelProps) => {
   const pieData = data.series.map(({ values: data, params, metric_type, filter_index }) => {
     const { label } = getLabel({ metric_type, params, labels, filter_index })
@@ -44,7 +46,7 @@ export const PieDashboardPanel = ({
   const total = pieData.reduce((prev, cur) => prev + cur.value, 0)
 
   const calculateShare = (value: number) => Number.parseFloat(((value / total) * 100).toFixed())
-  const getArcLabel = ({ value }: { value: number }) => `${value} (${calculateShare(value)})%`
+  const getArcLabel = ({ value }: { value: number }) => `${value} (${calculateShare(value)}%)`
   const [valueFormatter, arcLabel] = [getArcLabel, getArcLabel]
 
   const series: SeriesType[] = [
@@ -60,7 +62,13 @@ export const PieDashboardPanel = ({
   ]
 
   return (
-    <PanelCardGeneral title={title} description={description} height={height} textCenterAlign>
+    <PanelCardGeneral
+      title={title}
+      description={description}
+      height={height}
+      textCenterAlign
+      borderNone={borderNone}
+    >
       <MuiXChartPlotTemplate
         series={series}
         SurfaceComponents={<PieSurfaceComponents />}
