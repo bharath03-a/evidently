@@ -2,6 +2,9 @@ import abc
 from typing import Dict
 from typing import Generic
 from typing import List
+from typing import Optional
+
+from pydantic import BaseModel
 
 from evidently.core.metric_types import BoundTest
 from evidently.core.metric_types import MeanStdCalculation
@@ -10,6 +13,7 @@ from evidently.core.metric_types import MeanStdValue
 from evidently.core.metric_types import SingleValue
 from evidently.core.metric_types import SingleValueCalculation
 from evidently.core.metric_types import SingleValueMetric
+from evidently.core.metric_types import SingleValueMetricTests
 from evidently.core.metric_types import TMeanStdMetric
 from evidently.core.metric_types import TSingleValueMetric
 from evidently.core.report import Context
@@ -101,15 +105,18 @@ class LegacyRegressionSingleValueMetric(
         return _gen_regression_input_data(context)
 
 
-class MeanError(MeanStdMetric):
+class MeanErrorConfig(BaseModel, extra="forbid"):
+    mean_tests: Optional[SingleValueMetricTests] = None
+    std_tests: Optional[SingleValueMetricTests] = None
     error_plot: bool = True
     error_distr: bool = False
     error_normality: bool = False
 
+
+class MeanError(MeanStdMetric):
     def __init__(self, **kwargs):
-        if "tests" in kwargs:
-            raise ValueError("'tests' is not a valid argument for MAE. Did you mean 'mean_tests=' or 'std_tests='?")
-        super().__init__(**kwargs)
+        config = MeanErrorConfig(**kwargs)
+        super().__init__(**config.model_dump())
 
     def _default_tests_with_reference(self, context: Context) -> List[BoundTest]:
         return [eq(Reference(relative=0.1)).bind_mean_std(self.get_fingerprint())]
@@ -135,22 +142,19 @@ class MeanErrorCalculation(LegacyRegressionMeanStdMetric[MeanError]):
     def display_name(self) -> str:
         return "Mean Error"
 
-    def mean_display_name(self) -> str:
-        return "Mean Error"
 
-    def std_display_name(self) -> str:
-        return "Std Error"
-
-
-class MAE(MeanStdMetric):
+class MAEConfig(BaseModel, extra="forbid"):
+    mean_tests: Optional[SingleValueMetricTests] = None
+    std_tests: Optional[SingleValueMetricTests] = None
     error_plot: bool = False
     error_distr: bool = True
     error_normality: bool = False
 
+
+class MAE(MeanStdMetric):
     def __init__(self, **kwargs):
-        if "tests" in kwargs:
-            raise ValueError("'tests' is not a valid argument for MAE. Did you mean 'mean_tests=' or 'std_tests='?")
-        super().__init__(**kwargs)
+        config = MAEConfig(**kwargs)
+        super().__init__(**config.model_dump())
 
     def _default_tests_with_reference(self, context: Context) -> List[BoundTest]:
         return [eq(Reference(relative=0.1)).bind_mean_std(self.get_fingerprint(), True)]
@@ -180,12 +184,6 @@ class MAECalculation(LegacyRegressionMeanStdMetric[MAE]):
     def display_name(self) -> str:
         return "Mean Absolute Error"
 
-    def mean_display_name(self) -> str:
-        return "Mean Absolute Error"
-
-    def std_display_name(self) -> str:
-        return "Std Absolute Error"
-
 
 class RMSE(SingleValueMetric):
     error_plot: bool = False
@@ -213,14 +211,17 @@ class RMSECalculation(LegacyRegressionSingleValueMetric[RMSE]):
         return "RMSE"
 
 
-class MAPE(MeanStdMetric):
+class MAPEConfig(BaseModel, extra="forbid"):
+    mean_tests: Optional[SingleValueMetricTests] = None
+    std_tests: Optional[SingleValueMetricTests] = None
     perc_error_plot: bool = True
     error_distr: bool = False
 
+
+class MAPE(MeanStdMetric):
     def __init__(self, **kwargs):
-        if "tests" in kwargs:
-            raise ValueError("'tests' is not a valid argument for MAE. Did you mean 'mean_tests=' or 'std_tests='?")
-        super().__init__(**kwargs)
+        config = MAPEConfig(**kwargs)
+        super().__init__(**config.model_dump())
 
     def _default_tests_with_reference(self, context: Context) -> List[BoundTest]:
         return [eq(Reference(relative=0.1)).bind_mean_std(self.get_fingerprint())]
@@ -243,12 +244,6 @@ class MAPECalculation(LegacyRegressionMeanStdMetric[MAPE]):
 
     def display_name(self) -> str:
         return "Mean Absolute Percentage Error"
-
-    def mean_display_name(self) -> str:
-        return "Mean Absolute Percentage Error"
-
-    def std_display_name(self) -> str:
-        return "Std Absolute Percentage Error"
 
 
 class R2Score(SingleValueMetric):
